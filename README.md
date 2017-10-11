@@ -18,7 +18,7 @@
 ``` javascript
     npm start
 ```
-# 注意：要执行生产环境，必须先执行npm start 创建dist目录。因为build依赖dist目录
+### 注意：要执行生产环境，必须先执行npm start 创建dist目录。因为build依赖dist目录
 **生产环境 - builder**
 ``` javascript
     npm run build

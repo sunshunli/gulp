@@ -38,7 +38,7 @@ var Config = {
     js: {  
         src: SRC_DIR + 'js/**/*.js',             // JS目录：./src/js/  
         dist: DIST_DIR + 'js'                   // JS文件build后存放的目录：./dist/js  
-        ,build_js: DIST_DIR + 'js/' + BUILD_NAME                  // 合并后的js的文件名  
+        ,build_js: BUILD_DIR + 'js/**/*.js'               // 合并后的js的文件名  
         ,builder: BUILD_DIR + 'js' 
     },  
     img: {  

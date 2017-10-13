@@ -1,5 +1,5 @@
 var gulp = require('gulp');
-var autoprefixer = require('gulp-autoprefixer'); // 处理css中浏览器兼容的前缀  
+var autoprefixer = require('autoprefixer'); // 处理css中浏览器兼容的前缀  
 var rename = require('gulp-rename'); //重命名  
 var cssnano = require('gulp-cssnano'); // css的层级压缩合并
 var sass = require('gulp-sass'); //sass
@@ -19,10 +19,16 @@ var htmlreplace = require('gulp-html-replace');
 var flatten = require('gulp-flatten'); // 分开目录下的文件
 var browserSync = require('browser-sync').create();
 var reload = browserSync.reload;
-
+var sourcemaps = require('gulp-sourcemaps');
+var postcss =  require('gulp-postcss');
+var cssnext = require('postcss-cssnext');
+var shortcss = require('postcss-short');
+var babel = require('gulp-babel');
+var webpack = require('gulp-webpack');
+var base64 = require('gulp-base64');
 //======= gulp build 打包资源 ===============
 function prod() {
-     // 清空dist目录
+     // 清空builder目录
     gulp.task('clean', function () {
         return del([Config.build]);
     });
@@ -66,9 +72,14 @@ function prod() {
      * CSS样式处理 
      */
     gulp.task('css', function () {
+        var plug = [
+            shortcss,
+            cssnext,
+            autoprefixer({browsers: ['> 1%','last 2 version'], cascade: false})
+        ];
         return gulp
                 .src(Config.css.src)
-                .pipe(autoprefixer('last 2 version'))
+                .pipe(postcss(plug))
                 .pipe(gulp.dest(Config.css.builder))
                 .pipe(rename({
                     suffix: '.min'
@@ -83,9 +94,20 @@ function prod() {
      * SASS样式处理 
      */
     gulp.task('sass', function () {
+        var plug = [
+            shortcss,
+            cssnext,
+            autoprefixer({browsers: ['> 1%','last 2 version'], cascade: false})
+        ];
         return gulp
                 .src(Config.sass.src)
-                .pipe(autoprefixer('last 2 version'))
+                .pipe(base64({
+                    baseDir: Config.src + '/sass',
+                    extensions: ['svg', 'png', /\.jpg#datauri$/i],
+                    maxImageSize: 100*1024, // bytes 
+                    debug: true
+                }))
+                .pipe(postcss(plug))
                 .pipe(sass())
                 .pipe(gulp.dest(Config.sass.builder))
                 .pipe(rename({
@@ -100,15 +122,29 @@ function prod() {
     /** 
      * js处理 
      */
-    gulp.task('js', function () {
+    gulp.task('js2', function () {
         return gulp
-                .src(Config.js.build_js+'.js')
+                .src(Config.js.src)
+                .pipe(jshint('.jshintrc'))
+                .pipe(jshint.reporter('default'))
+                .pipe(babel())
+                .pipe(gulp.dest(Config.js.builder+'/all'))
+                .pipe(webpack({
+                    output: {
+                        filename: Config.build_name + '.js'
+                    }
+                }))
                 .pipe(gulp.dest(Config.js.builder))
+    });
+   gulp.task('js', ['js2'], function () {
+        return gulp
+                .src(Config.js.build_js)
                 .pipe(rename({
-                    basename: Config.build_name,
                     suffix: '.min'
                 }))
+                .pipe(sourcemaps.init({loadMaps: true}))
                 .pipe(uglify())
+                .pipe(sourcemaps.write('./map'))
                 .pipe(rev())  
                 .pipe(gulp.dest(Config.js.builder))
                 .pipe(rev.manifest('rev-js-manifest.json'))
@@ -136,9 +172,9 @@ function prod() {
     /** 
      * 合并所有css文件并做压缩处理 --未应用
      */
-    gulp.task('css-concat', function () {
+    gulp.task('css-concat',['sass','css'], function () {
         return gulp
-                .src(Config.dist + 'css/**/*.css')
+                .src([Config.build + 'css/**/*.css','!'+Config.build + 'css/**/*.min.css'])
                 .pipe(concat(Config.build_name + '.css'))
                 .pipe(gulp.dest(Config.css.builder))
                 .pipe(rename({
@@ -150,26 +186,10 @@ function prod() {
                 .pipe(rev.manifest('rev-all-css-manifest.json'))
                 .pipe(gulp.dest(Config.bdrev));
     });
-    /**
-    图片base64处理
-    */
-    gulp.task('base64', function(){
-        return gulp.src(Config.css.dist+'/**/*.css')
-        .pipe(base64({ 
-            baseDir: Config.css.dist, 
-            extensions: ['svg', 'png', /\.jpg#datauri$/i], 
-            maxImageSize: 100 * 1024, //小于100KB的PNG
-            debug: false 
-        }))
-        .pipe(gulp.dest(Config.css.dist))
-        .pipe(reload({
-            stream: true
-        }));
-    })
     /** 
      * 图片处理 
      */
-    gulp.task('images', ['base64'], function () {
+    gulp.task('images', function () {
         return gulp.src(Config.img.src).pipe(cache(imagemin({
                     optimizationLevel: 3, //类型：Number  默认：3  取值范围：0-7（优化等级）
                     progressive: true, //类型：Boolean 默认：false 无损压缩jpg图片
@@ -181,7 +201,7 @@ function prod() {
                 .pipe(gulp.dest(Config.img.builder));
     });
     gulp.task('build', function(cb){
-        sequence('clean',['css', 'sass', 'js', 'assets', 'images', 'css-concat', 'html'], 'html2', 'base64')(function(){
+        sequence('clean',['js', 'assets', 'images', 'css-concat', 'html'], 'html2')(function(){
             browserSync.init({
                 server: {
                     baseDir: Config.build
@@ -191,14 +211,5 @@ function prod() {
             });
         })
     })
-    // gulp.task('build', ['html', 'css', 'sass', 'js', 'assets', 'images', 'js-concat', 'css-concat'], function (done) {
-    //         browserSync.init({
-    //             server: {
-    //                 baseDir: Config.build
-    //             }
-    //             , notify: false
-    //             , port: 8090 // 默认3000
-    //         });
-    //     });
 }
 module.exports = prod;

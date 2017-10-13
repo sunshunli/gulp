@@ -1,4 +1,4 @@
-import num from './inclod.js';
+import num from './import/inclod.js';
 $(function(){
 	$('img').click(function(){
 		alert(1);

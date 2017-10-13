@@ -1,12 +1,11 @@
 var gulp = require('gulp');
 var gulpLoadPlugins=require('gulp-load-plugins');
 var plugins=gulpLoadPlugins();
-var autoprefixer = plugins.autoprefixer; // 处理css中浏览器兼容的前缀  
+var autoprefixer = require('autoprefixer'); // 处理css中浏览器兼容的前缀  
 var rename = plugins.rename; //重命名  
 var cssnano = plugins.cssnano; // css的层级压缩合并
 var sass = plugins.sass; //sass
 var jshint = plugins.jshint; //js检查 ==> npm install --save-dev jshint gulp-jshint（.jshintrc：https://my.oschina.net/wjj328938669/blog/637433?p=1）  
-var uglify = plugins.uglify; //js压缩  
 var concat = plugins.concat; //合并文件  
 var imagemin = plugins.imagemin; //图片压缩 
 var cache = plugins.cache; //只压缩修改的图片，没有修改的图片直接从缓存文件读取
@@ -21,6 +20,10 @@ var base64 = plugins.base64;
 var babel = plugins.babel;
 var webpack = plugins.webpack;
 var flatten =  plugins.flatten; // 分开目录下的文件
+var postcss =  plugins.postcss;
+var sourcemaps = plugins.sourcemaps;
+var cssnext = require('postcss-cssnext');
+var shortcss = require('postcss-short');
 var Config = require('./gulpfile.config.js');
 //======= gulp dev 开发环境下 ===============
 function dev() {
@@ -57,15 +60,23 @@ function dev() {
      * SASS样式处理 
      */
     gulp.task('sass:dev', function () {
+        var plug = [
+            shortcss,
+            cssnext,
+            autoprefixer({browsers: ['> 1%','last 2 version'], cascade: false})
+        ];
         return gulp
         		.src(Config.sass.src)
-        		.pipe(sass())
-                .pipe(base64({ 
-                    baseDir: Config.css.dist, 
-                    extensions: ['png'], 
-                    maxImageSize: 100 * 1024, //小于100KB的PNG
-                    debug: false 
+                .pipe(base64({
+                    baseDir: Config.src + '/sass',
+                    extensions: ['svg', 'png', /\.jpg#datauri$/i],
+                    maxImageSize: 100*1024, // 小于100kb转码
+                    debug: true
                 }))
+                .pipe(postcss(plug))
+        		.pipe(sourcemaps.init())
+                .pipe(sass())
+                .pipe(sourcemaps.write('./map/'))
                 .pipe(rev())   
         		.pipe(gulp.dest(Config.sass.dist))
                 .pipe(rev.manifest('rev-scss-manifest.json'))
@@ -79,7 +90,7 @@ function dev() {
      */
     gulp.task('js:dev', function () {
         return gulp
-        		.src(Config.js.src)
+        		.src([Config.js.src])
         		.pipe(jshint('.jshintrc'))
         		.pipe(jshint.reporter('default'))
                 .pipe(babel())
@@ -97,23 +108,23 @@ function dev() {
     /**
     图片base64处理
     */
-    gulp.task('base64', function(){
-        return gulp.src(Config.css.dist+'/**/*.css')
-        .pipe(base64({ 
-            baseDir: Config.css.dist, 
-            extensions: ['svg', 'png', /\.jpg#datauri$/i], 
-            maxImageSize: 100 * 1024, //小于100KB的PNG
-            debug: false 
-        }))
-        .pipe(gulp.dest(Config.css.dist))
-        .pipe(reload({
-            stream: true
-        }));
-    })
+    // gulp.task('base64', function(){
+    //     return gulp.src(Config.css.dist+'/**/*.css')
+    //     .pipe(base64({ 
+    //         baseDir: Config.css.dist, 
+    //         extensions: ['svg', 'png', /\.jpg#datauri$/i], 
+    //         maxImageSize: 100 * 1024, //小于100KB的PNG
+    //         debug: false 
+    //     }))
+    //     .pipe(gulp.dest(Config.css.dist))
+    //     .pipe(reload({
+    //         stream: true
+    //     }));
+    // })
     /** 
      * 图片处理 
      */
-    gulp.task('images:dev', ['base64'], function () {
+    gulp.task('images:dev', function () {
         return gulp.src(Config.img.src)
                 .pipe(cache(imagemin({
                     optimizationLevel: 3, //类型：Number  默认：3  取值范围：0-7（优化等级）
@@ -144,7 +155,7 @@ function dev() {
     });
 
     gulp.task('dev', function(cb){
-        sequence('clean:dev', ['css:dev', 'sass:dev', 'js:dev', 'assets:dev', 'images:dev', 'html:dev'], 'base64')(function(){
+        sequence('clean:dev', ['css:dev', 'sass:dev', 'js:dev', 'assets:dev', 'images:dev', 'html:dev'])(function(){
             browserSync.init({
                 server: {
                     baseDir: Config.dist

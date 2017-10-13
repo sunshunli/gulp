@@ -1,5 +1,5 @@
 # gulp配置
-## 新增postcss配置:http://www.w3cplus.com/PostCSS/postcss-deep-dive-shortcuts-and-shorthand.html 相关插件
+###### 新增postcss配置:http://www.w3cplus.com/PostCSS/postcss-deep-dive-shortcuts-and-shorthand.html 相关插件
 ### 包括开发环境及生产环境配置需要
 
 **介绍**

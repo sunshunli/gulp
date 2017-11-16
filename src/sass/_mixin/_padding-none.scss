@@ -1,0 +1,3 @@
+@mixin padding-none($t:0,$r:$t,$b:$t,$l:$r){
+	padding: $t $r $b $l;
+}

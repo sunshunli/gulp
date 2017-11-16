@@ -11,7 +11,7 @@
  由于添加了版本号信息，所以需要先手动更改依赖版本号文件：gulp-rev和gulp-rev-collector(重要)
  ``` javascript
  1.打开node_modules\gulp-rev\index.js
-    第144行 manifest[originalFile] = revisionedFile;
+    第134行 manifest[originalFile] = revisionedFile;
     更新为: manifest[originalFile] = originalFile + '?v=' + file.revHash;
   2.打开nodemodules\gulp-rev\nodemodules\rev-path\index.js
     10行 return filename + '-' + hash + ext;

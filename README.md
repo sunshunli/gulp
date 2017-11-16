@@ -7,7 +7,23 @@
 2. 配置了jslint/es2015进行js检查与编译es6 -> 生成统一的js： build.js -> 生产环境将其进行了压缩生成 -> build.min.js
 3. 配置了图片压缩及base64图片转码
 4. 配置了版本号，防止缓存：*仅限生产环境配置
-
+## *使用说明
+ 由于添加了版本号信息，所以需要先手动更改依赖版本号文件：gulp-rev和gulp-rev-collector(重要)
+ ``` javascript
+ 1.打开node_modules\gulp-rev\index.js
+    第144行 manifest[originalFile] = revisionedFile;
+    更新为: manifest[originalFile] = originalFile + '?v=' + file.revHash;
+  2.打开nodemodules\gulp-rev\nodemodules\rev-path\index.js
+    10行 return filename + '-' + hash + ext;
+    更新为: return filename + ext;
+  3.打开node_modules\gulp-rev-collector\index.js
+    31行if ( !_.isString(json[key]) || path.basename(json[key]).replace(new RegExp( opts.revSuffix ), '' ) !== path.basename(key) ) {
+    更新为: if ( !_.isString(json[key]) || path.basename(json[key]).split('?')[0] !== path.basename(key) ) {</br>
+```
+作者：win_wlq
+链接：http://www.jianshu.com/p/df593ad8082d
+來源：简书
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
 ## 使用
 **需要node环境-npm包**
   执行：安装所需依赖

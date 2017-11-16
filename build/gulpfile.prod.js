@@ -37,7 +37,7 @@ function prod() {
      */
     gulp.task('html', function () {
         return gulp
-                .src([Config.html.src])// 更改版本号json文件
+                .src([Config.html.src, "!" + Config.assets.srcc])// 更改版本号json文件
                 .pipe(flatten())
                 .pipe(htmlreplace({
                     'css': {
@@ -107,8 +107,8 @@ function prod() {
                     maxImageSize: 100*1024, // bytes 
                     debug: true
                 }))
-                .pipe(postcss(plug))
                 .pipe(sass())
+                .pipe(postcss(plug))
                 .pipe(gulp.dest(Config.sass.builder))
                 .pipe(rename({
                     suffix: '.min'

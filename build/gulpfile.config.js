@@ -21,6 +21,7 @@ var Config = {
         builder: BUILD_DIR
     },  
     assets: {  
+        srcc: SRC_DIR + 'assets/**/*.html', 
         src: SRC_DIR + 'assets/**/*',            // assets目录：./src/assets  
         dist: DIST_DIR + 'assets'                // assets文件build后存放的目录：./dist/assets  
         ,builder: BUILD_DIR + 'assets'    

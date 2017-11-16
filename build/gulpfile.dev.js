@@ -21,10 +21,12 @@ var babel = plugins.babel;
 var webpack = plugins.webpack;
 var flatten =  plugins.flatten; // 分开目录下的文件
 var postcss =  plugins.postcss;
+var changed =  plugins.changed; //之编译改变的文件
 var sourcemaps = plugins.sourcemaps;
 var cssnext = require('postcss-cssnext');
 var shortcss = require('postcss-short');
 var Config = require('./gulpfile.config.js');
+var handleErrors = require('../util/handleErrors.js');
 //======= gulp dev 开发环境下 ===============
 function dev() {
     // 清空dist目录
@@ -37,6 +39,8 @@ function dev() {
     gulp.task('assets:dev', function () {
         return gulp
         		.src(Config.assets.src)
+                //.pipe(changed(dist,{extension:'.js'}))
+                .pipe(changed(Config.assets.dist))
         		.pipe(gulp.dest(Config.assets.dist))
         		.pipe(reload({
 		            stream: true
@@ -73,9 +77,10 @@ function dev() {
                     maxImageSize: 100*1024, // 小于100kb转码
                     debug: true
                 }))
-                .pipe(postcss(plug))
         		.pipe(sourcemaps.init())
-                .pipe(sass())
+                .pipe(sass().on('error', sass.logError))
+                .pipe(postcss(plug)) // 放到编译后面，否则可能报错
+                .on('error', handleErrors)     //交给notify处理错误
                 .pipe(sourcemaps.write('./map/'))
                 .pipe(rev())   
         		.pipe(gulp.dest(Config.sass.dist))
@@ -91,10 +96,11 @@ function dev() {
     gulp.task('js:dev', function () {
         return gulp
         		.src([Config.js.src])
-        		.pipe(jshint('.jshintrc'))
+        		// .pipe(jshint('.jshintrc'))
         		.pipe(jshint.reporter('default'))
                 .pipe(babel())
         		.pipe(gulp.dest(Config.js.dist))
+                .on('error', handleErrors)     //交给notify处理错误
                 .pipe(webpack({
                     output: {
                         filename: Config.build_name + '.js'
@@ -145,7 +151,7 @@ function dev() {
      */
     gulp.task('html:dev', function () {
         return gulp
-                .src([Config.html.manifest, Config.html.src])// 更改版本号json文件
+                .src([Config.html.manifest, Config.html.src, "!" + Config.assets.srcc])// 更改版本号json文件
                 .pipe(flatten())
                 .pipe(revCollector()) // 更改版本号路径
                 .pipe(gulp.dest(Config.html.dist))

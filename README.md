@@ -13,7 +13,13 @@
  1.打开node_modules\gulp-rev\index.js
     第134行 manifest[originalFile] = revisionedFile;
     更新为: manifest[originalFile] = originalFile + '?v=' + file.revHash;
-  2.打开nodemodules\gulp-rev\nodemodules\rev-path\index.js
+   2.->-cnpm安装- 修改：nodemodules\gulp-rev\nodemodules\rev-path\index.js
+    10行 return filename + '-' + hash + ext;
+    更新为: return filename + ext;
+    或者
+    9行 return modifyFilename(pth, (filename, ext) => `${filename}-${hash}${ext}`);
+    更新为: return modifyFilename(pth, (filename, ext) => `${filename}${ext}`);
+    ->-npm安装- 修改：nodemodules\rev-path\index.js
     10行 return filename + '-' + hash + ext;
     更新为: return filename + ext;
     或者
